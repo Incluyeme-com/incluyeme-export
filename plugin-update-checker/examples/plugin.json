@@ -1,0 +1,8 @@
+{
+  "name" : "Incluyeme - Filtro aplicantes",
+  "version" : "1.5.2",
+  "download_url" : "http://incluyeme.com",
+  "sections" : {
+	"description" : "Extension de funciones para el Plugin WPJob Board"
+  }
+}
