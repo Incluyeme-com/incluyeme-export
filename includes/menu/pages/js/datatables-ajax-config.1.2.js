@@ -1,7 +1,21 @@
+const usersToUpdate = []
+
 jQuery(document).ready(function () {
+    const columns = ['Nombre', 'Apellido', 'Email', 'Telefono', 'Provincia', 'Zona',
+        'Genero',
+        'Pais de nacimiento',
+        'Discapacidad',
+        'Nivel Maximo de Estudio',
+        '¿Tiene trabajo?',
+        '¿En busqueda laboral?',
+        'CCD',
+        'Nivel de Ingles',
+        'Area de Interes',
+        'Etiquetas',
+        'Ajustes Razonables'];
     let table = jQuery('#candidates').DataTable({
         initComplete: function () {
-            let columnsToSelect = [6, 9, 10, 11, 12, 13, 14];
+            let columnsToSelect = [4, 5, 6, 7, 9, 10, 11, 12, 13, 14];
             columnsToSelect.forEach(function (columnIndex) {
                 let column = table.column(columnIndex);
                 let select = jQuery('<br><select><option value=""></option></select>')
@@ -11,7 +25,7 @@ jQuery(document).ready(function () {
                             jQuery(this).val()
                         );
                         column
-                            .search(val ? val : '', true, false)
+                            .search(val || '', true, false)
                             .draw();
                     });
                 select.addClass('form-select');
@@ -28,7 +42,7 @@ jQuery(document).ready(function () {
                         jQuery(this).val()
                     );
                     table.column(8)
-                        .search(val ? val : '', true, false)
+                        .search(val || '', true, false)
                         .draw();
                 });
             select2.addClass('form-select');
@@ -45,7 +59,7 @@ jQuery(document).ready(function () {
                     .appendTo(jQuery(column.header()))
                     .on('change', function () {
                         let val = jQuery.fn.dataTable.util.escapeRegex(jQuery(this).val());
-                        column.search(val ? val : '', true, false).draw();
+                        column.search(val || '', true, false).draw();
                     });
 
                 select.addClass('form-select');
@@ -58,7 +72,9 @@ jQuery(document).ready(function () {
             });
 
         },
-        dom: 'Bfrtip',
+        dom: "<'row'<'col-sm-8 col-lg-10'B><'col-2 col-md-2'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-8 col-lg-10'i><'col-2 col-md-2'p>>",
         lengthMenu: [
             [10, 25, 50, 100, -1],
             ['10 elementos', '25 elementos', '50 elementos', '100 elementos', 'Mostrar todo']
@@ -97,20 +113,35 @@ jQuery(document).ready(function () {
             {
                 extend: 'csv',
                 exportOptions: {
-                    columns: [':visible']
+                    columns: [':visible'],
+                    format: {
+                        header: function (data, columnIdx) {
+                            return columns[columnIdx];
+                        }
+                    }
                 }
             },
             {
                 extend: 'excelHtml5',
                 exportOptions: {
-                    columns: ':visible'
-                }
+                    columns: ':visible',
+                    format: {
+                        header: function (data, columnIdx) {
+                            return columns[columnIdx];
+                        }
+                    }
+                },
             },
             {
                 extend: 'pdfHtml5',
                 exportOptions: {
-                    columns: [':visible']
-                }
+                    columns: [':visible'],
+                    format: {
+                        header: function (data, columnIdx) {
+                            return columns[columnIdx];
+                        }
+                    }
+                },
             },
             {
                 text: 'JSON',
@@ -120,7 +151,8 @@ jQuery(document).ready(function () {
                     data.body.forEach(function (row) {
                         let rowData = {};
                         for (let i = 0; i < data.header.length; i++) {
-                            rowData[data.header[i]] = row[i];
+                            console.log({ad: columns[i]})
+                            rowData[columns[i]] = row[i];
                         }
                         transformedData.push(rowData);
                     });
@@ -128,6 +160,42 @@ jQuery(document).ready(function () {
                         new Blob([JSON.stringify(transformedData)]),
                         'Export.json'
                     );
+                }
+            },
+            {
+                text: 'Eliminar Tags',
+                action: function (e, dt, button, config) {
+                    this.processing(true);
+                    let selectedRows = dt.rows({selected: true}).data();
+                    const users = []
+                    selectedRows.map(function (row) {
+                        users.push(Number(row.user_id));
+                    });
+                    const that = this;
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: datatable_ajax_url.ajax_url,
+                        data: {
+                            action: 'delete_candidates_tags',
+                            users: users
+                        },
+                    }).done(function (result) {
+                        that.clear()
+                            .draw();
+                        that.ajax.reload();
+                        that.processing(false);
+                    });
+
+                }
+            },
+            {
+                text: 'Añadir Tags',
+                action: function (e, dt, button, config) {
+                    jQuery('#tagsModal').modal('show');
+                    let selectedRows = dt.rows({selected: true}).data();
+                    selectedRows.map(function (row) {
+                        usersToUpdate.push(Number(row.user_id));
+                    });
                 }
             }
         ],
@@ -144,7 +212,12 @@ jQuery(document).ready(function () {
         },
         ordering: false,
         columnDefs: [
-            {width: '250px', targets: 16}
+            {width: '250px', targets: 16},
+            {
+                targets: 17,
+                searchable: false,
+                visible: false
+            },
         ],
         columns: [
             {data: 'first_name'},
@@ -163,9 +236,56 @@ jQuery(document).ready(function () {
             {data: 'name_level'},
             {data: 'area_of_interest'},
             {data: 'tags'},
-            {
-                data: 'reasonable_adjustments'
-            },
+            {data: 'reasonable_adjustments'},
+            {data: 'user_id'}
         ],
     });
-});
+
+
+})
+
+function closeModals() {
+    jQuery('#tagsModal').modal('hide');
+}
+
+function checkTags() {
+
+    const checkboxes = document.querySelectorAll('.modal-body input[type="checkbox"]');
+
+
+    const selectedData = [];
+    closeModals();
+    checkboxes.forEach((checkbox) => {
+        if (checkbox.checked) {
+            const id = checkbox.id;
+            const label = checkbox.nextElementSibling.textContent.trim();
+            const selected = true;
+
+            const item = {id, label, selected};
+            selectedData.push(item);
+        }
+    });
+    const table = jQuery('#candidates').DataTable();
+    if (selectedData.length !== 0 && usersToUpdate.length !== 0) {
+
+        table.button(9).processing(true);
+        jQuery.ajax({
+            type: 'POST',
+            url: datatable_ajax_url.ajax_url,
+            data: {
+                action: 'add_candidates_tags',
+                users: usersToUpdate,
+                tags: JSON.stringify(selectedData)
+            },
+        }).done(function (result) {
+            table
+                .clear()
+                .draw();
+            table.ajax.reload();
+            table.button(9).processing(false);
+        });
+    } else {
+        table.ajax.reload();
+        table.button(9).processing(false);
+    }
+}
