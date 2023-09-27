@@ -16,6 +16,9 @@ require_once plugin_dir_path(__FILE__) . 'export-server.php';
 add_action('admin_init', 'incluPluginRequirementsExport' );
 add_action('wp_enqueue_scripts', 'enqueue_plugin_scripts');
 add_action( 'wp_ajax_get_candidates', 'get_candidates' );
+add_action( 'wp_ajax_delete_candidates_tags', 'update_candidates_tags' );
+add_action( 'wp_ajax_add_candidates_tags', 'add_candidates_tags' );
+add_action( 'wp_ajax_new_candidates_tags', 'add_new_candidates' );
 function incluPluginRequirementsExport()
 {
     if (is_admin() && current_user_can('activate_plugins') && !is_plugin_active('wpjobboard/index.php')) {
@@ -45,7 +48,7 @@ function inlcuRequirementsActivateExport()
 
 require_once 'plugin-update-checker/plugin-update-checker.php';
 $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
-    '',
+    'https://github.com/Incluyeme-com/incluyeme-export',
     __FILE__,
     'incluyeme-export'
 );
