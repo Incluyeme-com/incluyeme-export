@@ -23,7 +23,7 @@ class Queries {
         RS.id as resume_id,
         RS.user_id,
         RS.phone,
-        IDUI.name_level,
+        IDUI.meta_value AS name_level,
         U.user_email,
         UM.meta_value AS first_name,
         UMLN.meta_value AS last_name,
@@ -54,17 +54,13 @@ class Queries {
             resume_id
     ) AS IUDS ON IUDS.resume_id = RS.id
     LEFT JOIN (
-        SELECT
-            resume_id, IIL.name_level
+         SELECT
+            IDUI.meta_value, IDUI.user_id
         FROM
-            export_prefix_incluyeme_users_idioms IUI
-        INNER JOIN
-            export_prefix_incluyeme_idioms II ON II.id = IUI.idioms_id
-        INNER JOIN
-            export_prefix_incluyeme_idioms_level IIL ON IIL.id = IUI.slevel
+            export_prefix_usermeta IDUI
         WHERE
-            II.name_idioms = 'Ingles'
-    ) IDUI ON RS.id = IDUI.resume_id
+            IDUI.meta_key = 'english_level'
+    ) IDUI ON RS.user_id = IDUI.user_id
     LEFT JOIN (
         SELECT
             UM.meta_value, UM.user_id
