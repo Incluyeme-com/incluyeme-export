@@ -19,133 +19,59 @@ class Queries {
 	
 	public function getUsersInformation(): array {
 		$users       = "
+SELECT
+    RS.id AS resume_id,
+    RS.user_id,
+    RS.phone,
+    user_meta.english_level,
+    U.user_email,
+    user_meta.first_name,
+    user_meta.last_name,
+    user_meta.area_interes,
+    user_meta.country_nac,
+    user_meta.livingZone,
+    user_meta.edu_levelMaxSec,
+    user_meta.cudOption,
+    user_meta.workingSearch,
+    user_meta.workingNow,
+    IFNULL(IUI.province, RS.candidate_location) AS province,
+    IUI.moreDis AS reasonable_adjustments,
+    IUI.genre AS gender,
+    TAGS.meta_value AS tags,
+    IUDS.discap_names AS disability
+FROM wp_wpjb_resume RS
+INNER JOIN wp_users U ON RS.user_id = U.id
+LEFT JOIN wp_incluyeme_users_information IUI ON RS.id = IUI.resume_id
+LEFT JOIN (
     SELECT
-        RS.id as resume_id,
-        RS.user_id,
-        RS.phone,
-        IDUI.meta_value AS name_level,
-        U.user_email,
-        UM.meta_value AS first_name,
-        UMLN.meta_value AS last_name,
-        UAI.meta_value AS area_of_interest,
-        UNC.meta_value AS birthday_country,
-         ULZ.meta_value AS living_zone,
-         ELMS.meta_value AS max_education_level,
-            cudOption.meta_value AS cudOption,
-         UWN.meta_value AS has_job,
-           UWS.meta_value AS looking_for_job,
-        IF(IUI.province IS NULL, RS.candidate_location, IUI.province) AS province,
-        IUI.moreDis AS reasonable_adjustments,
-        IUI.genre AS gender,
-        TAGS.meta_value AS tags,
-        IUDS.discap_names AS disability
-    FROM
-        export_prefix_wpjb_resume RS
-    INNER JOIN
-        export_prefix_users U ON RS.user_id = U.id
-    INNER JOIN (
-        SELECT
-            resume_id, GROUP_CONCAT(discap_name SEPARATOR ', ') AS discap_names
-        FROM
-            wp_incluyeme_users_dicapselect IUDS
-        INNER JOIN
-            wp_incluyeme_discapacities ID ON IUDS.discap_id = ID.id
-        GROUP BY
-            resume_id
-    ) AS IUDS ON IUDS.resume_id = RS.id
-    LEFT JOIN (
-         SELECT
-            IDUI.meta_value, IDUI.user_id
-        FROM
-            export_prefix_usermeta IDUI
-        WHERE
-            IDUI.meta_key = 'english_level'
-    ) IDUI ON RS.user_id = IDUI.user_id
-    LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'first_name'
-    ) UM ON UM.user_id = RS.user_id
-    LEFT JOIN (
-        SELECT
-            TAGS.meta_value, TAGS.user_id
-        FROM
-            export_prefix_usermeta TAGS
-        WHERE
-            TAGS.meta_key = 'tagsIncluyeme'
-    ) TAGS ON TAGS.user_id = RS.user_id
-    LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'area_interes'
-    ) UAI ON UAI.user_id = RS.user_id
-      LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'country_nac'
-    ) UNC ON UAI.user_id = RS.user_id
-     LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'livingZone'
-    ) ULZ ON UAI.user_id = RS.user_id
-    LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'edu_levelMaxSec'
-    ) ELMS ON UAI.user_id = RS.user_id
-     LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'workingSearch'
-    ) UWS ON UAI.user_id = RS.user_id
-       LEFT JOIN (
-        SELECT
-            UM.meta_value, UM.user_id
-        FROM
-            export_prefix_usermeta UM
-        WHERE
-            UM.meta_key = 'workingNow'
-    ) UWN ON UAI.user_id = RS.user_id
-    LEFT JOIN (
-        SELECT
-            UMLN.meta_value, UMLN.user_id
-        FROM
-            export_prefix_usermeta UMLN
-        WHERE
-            UMLN.meta_key = 'last_name'
-    ) UMLN ON UMLN.user_id = RS.user_id
-     LEFT JOIN (
-        SELECT
-            cudOption.meta_value, cudOption.user_id
-        FROM
-            export_prefix_usermeta cudOption
-        WHERE
-            cudOption.meta_key = 'cudOption'
-    ) cudOption ON cudOption.user_id = RS.user_id
-    LEFT JOIN (
-        SELECT * FROM export_prefix_incluyeme_users_information
-    ) IUI ON IUI.resume_id = RS.id
-    WHERE
-        is_active = 1
+        RSU.user_id,
+        MAX(CASE WHEN RSU.meta_key = 'first_name' THEN RSU.meta_value END) AS first_name,
+        MAX(CASE WHEN RSU.meta_key = 'last_name' THEN RSU.meta_value END) AS last_name,
+        MAX(CASE WHEN RSU.meta_key = 'area_interes' THEN RSU.meta_value END) AS area_interes,
+        MAX(CASE WHEN RSU.meta_key = 'country_nac' THEN RSU.meta_value END) AS country_nac,
+        MAX(CASE WHEN RSU.meta_key = 'livingZone' THEN RSU.meta_value END) AS livingZone,
+        MAX(CASE WHEN RSU.meta_key = 'edu_levelMaxSec' THEN RSU.meta_value END) AS edu_levelMaxSec,
+        MAX(CASE WHEN RSU.meta_key = 'cudOption' THEN RSU.meta_value END) AS cudOption,
+        MAX(CASE WHEN RSU.meta_key = 'workingSearch' THEN RSU.meta_value END) AS workingSearch,
+        MAX(CASE WHEN RSU.meta_key = 'workingNow' THEN RSU.meta_value END) AS workingNow,
+        MAX(CASE WHEN RSU.meta_key = 'english_level' THEN RSU.meta_value END) AS english_level
+    FROM wp_usermeta RSU
+    WHERE RSU.meta_key IN (
+        'english_level', 'first_name', 'tagsIncluyeme', 'area_interes',
+        'country_nac', 'livingZone', 'edu_levelMaxSec', 'workingSearch',
+        'workingNow', 'last_name', 'cudOption'
+    )
+    GROUP BY RSU.user_id
+) AS user_meta ON RS.user_id = user_meta.user_id
+LEFT JOIN (
+    SELECT resume_id, GROUP_CONCAT(discap_name SEPARATOR ', ') AS discap_names
+    FROM wp_incluyeme_users_dicapselect IUDS
+    INNER JOIN wp_incluyeme_discapacities ID ON IUDS.discap_id = ID.id
+    GROUP BY resume_id
+) AS IUDS ON RS.id = IUDS.resume_id
+LEFT JOIN wp_usermeta TAGS ON RS.user_id = TAGS.user_id AND TAGS.meta_key = 'tagsIncluyeme'
+WHERE RS.is_active = 1;
+
 ";
 		$information = $this->executeSQL( $this->replaceString( $users ) );
 		
