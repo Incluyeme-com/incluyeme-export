@@ -63,7 +63,7 @@ class Queries {
         INNER JOIN
             export_prefix_incluyeme_idioms_level IIL ON IIL.id = IUI.slevel
         WHERE
-            II.name_idioms = 'Inglés'
+            II.name_idioms = 'Ingles'
     ) IDUI ON RS.id = IDUI.resume_id
     LEFT JOIN (
         SELECT
