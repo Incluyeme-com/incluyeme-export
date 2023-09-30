@@ -17,23 +17,14 @@ class Queries {
 		$this->CUD        = get_option( 'incluyemeFiltersCV' ) ?? 'certificado-discapacidad';
 	}
 	
-	public function getUsersInformation(): array {
-		$users       = "
+	public function getUsersInformation() {
+		$users = "
 SELECT
     RS.id AS resume_id,
     RS.user_id,
     RS.phone,
-    user_meta.english_level,
     U.user_email,
-    user_meta.first_name,
-    user_meta.last_name,
-    user_meta.area_interes,
-    user_meta.country_nac,
-    user_meta.livingZone,
-    user_meta.edu_levelMaxSec,
-    user_meta.cudOption,
-    user_meta.workingSearch,
-    user_meta.workingNow,
+    user_meta.user_meta_json,
     IFNULL(IUI.province, RS.candidate_location) AS province,
     IUI.moreDis AS reasonable_adjustments,
     IUI.genre AS gender,
@@ -44,24 +35,22 @@ INNER JOIN wp_users U ON RS.user_id = U.id
 LEFT JOIN wp_incluyeme_users_information IUI ON RS.id = IUI.resume_id
 LEFT JOIN (
     SELECT
-        RSU.user_id,
-        MAX(CASE WHEN RSU.meta_key = 'first_name' THEN RSU.meta_value END) AS first_name,
-        MAX(CASE WHEN RSU.meta_key = 'last_name' THEN RSU.meta_value END) AS last_name,
-        MAX(CASE WHEN RSU.meta_key = 'area_interes' THEN RSU.meta_value END) AS area_interes,
-        MAX(CASE WHEN RSU.meta_key = 'country_nac' THEN RSU.meta_value END) AS country_nac,
-        MAX(CASE WHEN RSU.meta_key = 'livingZone' THEN RSU.meta_value END) AS livingZone,
-        MAX(CASE WHEN RSU.meta_key = 'edu_levelMaxSec' THEN RSU.meta_value END) AS edu_levelMaxSec,
-        MAX(CASE WHEN RSU.meta_key = 'cudOption' THEN RSU.meta_value END) AS cudOption,
-        MAX(CASE WHEN RSU.meta_key = 'workingSearch' THEN RSU.meta_value END) AS workingSearch,
-        MAX(CASE WHEN RSU.meta_key = 'workingNow' THEN RSU.meta_value END) AS workingNow,
-        MAX(CASE WHEN RSU.meta_key = 'english_level' THEN RSU.meta_value END) AS english_level
-    FROM wp_usermeta RSU
-    WHERE RSU.meta_key IN (
-        'english_level', 'first_name', 'tagsIncluyeme', 'area_interes',
-        'country_nac', 'livingZone', 'edu_levelMaxSec', 'workingSearch',
-        'workingNow', 'last_name', 'cudOption'
-    )
-    GROUP BY RSU.user_id
+    RSU.user_id,
+    CONCAT(
+    '{',
+    GROUP_CONCAT(
+        '`', RSU.meta_key, '`: `', RSU.meta_value, '`'
+        SEPARATOR ', '
+    ),
+    '}'
+) AS user_meta_json
+FROM wp_usermeta RSU
+WHERE RSU.meta_key IN (
+    'english_level', 'first_name', 'tagsIncluyeme', 'area_interes',
+    'country_nac', 'livingZone', 'edu_levelMaxSec', 'workingSearch',
+    'workingNow', 'last_name', 'cudOption'
+)
+GROUP BY RSU.user_id
 ) AS user_meta ON RS.user_id = user_meta.user_id
 LEFT JOIN (
     SELECT resume_id, GROUP_CONCAT(discap_name SEPARATOR ', ') AS discap_names
@@ -70,20 +59,20 @@ LEFT JOIN (
     GROUP BY resume_id
 ) AS IUDS ON RS.id = IUDS.resume_id
 LEFT JOIN wp_usermeta TAGS ON RS.user_id = TAGS.user_id AND TAGS.meta_key = 'tagsIncluyeme'
-WHERE RS.is_active = 1;
-
-";
+WHERE RS.is_active = 1;";
+		
+		
 		$information = $this->executeSQL( $this->replaceString( $users ) );
 		
 		return $information;
 	}
 	
 	
-	public function getFormatInformation(): array {
+	public function getFormatInformation() {
 		return $this->formatInformation( $this->getUsersInformation() );
 	}
 	
-	private function executeSQL( $query ): array {
+	private function executeSQL( $query ) {
 		return $this->wp->get_results( $query );
 	}
 	
@@ -94,27 +83,31 @@ WHERE RS.is_active = 1;
 		return preg_replace( $patterns, $replacements, $query );
 	}
 	
-	public function formatInformation( $information ): array {
+	public function formatInformation( $information ) {
 		$columns = [];
 		foreach ( $information as $info ) {
+			$usersInfo = str_replace( "`", "\"", $info->user_meta_json );
+						error_log( print_r( $usersInfo, true ) );
+			$userInfo  = json_decode( $usersInfo, true );
+
 			$columns[] = [
-				'first_name'             => $info->first_name ?? 'NONE',
+				'first_name'             => $userInfo["first_name"] ?? 'NONE',
 				'user_id'                => $info->user_id ?? 'NONE',
-				'last_name'              => $info->last_name ?? 'NONE',
+				'last_name'              => $userInfo["last_name"] ?? 'NONE',
 				'user_email'             => $info->user_email ?? 'NONE',
 				'phone'                  => $info->phone ?? 'NONE',
 				'province'               => $info->province ?? 'NONE',
-				'zone'                   => $info->living_zone ?? 'NONE',
+				'zone'                   => $userInfo["livingZone"] ?? 'NONE',
 				'gender'                 => $info->gender ?? 'NONE',
-				'birth_country'          => $info->birthday_country ?? 'NONE',
+				'birth_country'          => $userInfo["country_nac"] ?? 'NONE',
 				'disability'             => $info->disability ?? 'NONE',
 				'reasonable_adjustments' => $info->reasonable_adjustments ?? 'NONE',
-				'max_education_level'    => $info->max_education_level ?? 'NONE',
-				'has_job'                => $info->has_job,
-				'looking_for_job'        => $info->looking_for_job ?? 'NONE',
-				'ccd'                    => $info->cudOption ?? 'NONE',
-				'name_level'             => $info->name_level ?? 'NONE',
-				'area_of_interest'       => $info->area_of_interest ?? 'NONE',
+				'max_education_level'    => $userInfo["edu_levelMaxSec"] ?? 'NONE',
+				'has_job'                => $userInfo["workingNow"] ?? 'NONE',
+				'looking_for_job'        => $userInfo["workingSearch"] ?? 'NONE',
+				'ccd'                    => $userInfo["cudOption"] ?? 'NONE',
+				'name_level'             => $userInfo["english_level"] ?? 'NONE',
+				'area_of_interest'       => $userInfo["area_interes"] ?? 'NONE',
 				'tags'                   => $info->tags ? $this->formatTags( $info->tags ) : 'NONE'
 			];
 		}
