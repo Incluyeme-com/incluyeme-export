@@ -46,7 +46,7 @@ LEFT JOIN (
 ) AS user_meta_json
 FROM wp_usermeta RSU
 WHERE RSU.meta_key IN (
-    'english_level', 'first_name', 'tagsIncluyeme', 'area_interes',
+    'english_level', 'first_name', 'area_interes',
     'country_nac', 'livingZone', 'edu_levelMaxSec', 'workingSearch',
     'workingNow', 'last_name', 'cudOption'
 )
@@ -87,7 +87,6 @@ WHERE RS.is_active = 1;";
 		$columns = [];
 		foreach ( $information as $info ) {
 			$usersInfo = str_replace( "`", "\"", $info->user_meta_json );
-						error_log( print_r( $usersInfo, true ) );
 			$userInfo  = json_decode( $usersInfo, true );
 
 			$columns[] = [
