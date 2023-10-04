@@ -59,7 +59,8 @@ LEFT JOIN (
     GROUP BY resume_id
 ) AS IUDS ON RS.id = IUDS.resume_id
 LEFT JOIN wp_usermeta TAGS ON RS.user_id = TAGS.user_id AND TAGS.meta_key = 'tagsIncluyeme'
-WHERE RS.is_active = 1;";
+WHERE RS.is_active = 1
+GROUP BY RS.user_id;";
 		
 		
 		$information = $this->executeSQL( $this->replaceString( $users ) );
