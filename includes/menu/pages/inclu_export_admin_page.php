@@ -19,9 +19,6 @@ function inclu_export_admin_page()
 					<label for="fileInput" class="visually-hidden">File</label>
 					<input type="file" class="form-control p-1" name="file-excel" id="fileInput" />
 				</div>
-				<div class="col-auto">
-					<button class="btn btn-primary p-1" onclick="uploadFile();">Import</button>
-				</div>
 			</div>
 		</div>
 		<table id="candidates" class="table display nowrap" style="width:100%; height: 100%">
@@ -139,48 +136,54 @@ function inclu_export_admin_page()
 			var form = document.getElementById('fileInput').value;
 			var idxDot = form.lastIndexOf(".") + 1;
 			var extFile = form.substr(idxDot, form.length).toLowerCase();
-			if (extFile == "xlsx" || extFile == "xls" || extFile == "csv") {
+			if (extFile == "csv") {
 
 			} else {
 				Swal.fire({
 					icon: 'error',
 					title: 'Oops...',
-					html: 'Sólo está permitido cargar archivos en formato excel <b>.xlsx</b>',
+					html: 'Sólo está permitido cargar archivos en formato <b>.csv</b>',
 				})
 				document.getElementById('fileInput').value = "";
 				return false;
 			}
 		})
 
-		function uploadFile() {
-			let file = document.getElementById('fileInput').value;
-			if (file.length == 0) {
-				return Swal.fire({
-					icon: 'warning',
-					title: 'Seleccionaste un archivo?',
-					html: 'Por favor selecciona un archivo',
-				})
-			}
-			let formData = new FormData();
-			let excelFile = jQuery('#fileInput')[0].files[0];
-			formData.append('excel', excelFile);
-			jQuery.ajax({
-				type: 'POST',
-				url: '<?php echo plugins_url() . '/incluyeme-export/importExcel.php'; ?>',
-				data: formData,
-				contentType: false,
-				processData: false,
-				success: function(data) {
-					console.log(data);
-					Swal.fire({
-						icon: 'success',
-						title: 'Excel cargado',
-						html: 'Los datos se han cargado correctamente',
-					})
-					document.getElementById('fileInput').value = "";
-				}
-			});
-			return false;
+		function readFile(evt) {
+			let file = evt.target.files[0];
+			let reader = new FileReader();
+			reader.onload = (e) => {
+				let parse = parseCsv(e.target.result)
+				let formData = new FormData();
+				let excelFile = parse
+				formData.append('data', excelFile);
+				jQuery.ajax({
+					type: 'POST',
+					url: '<?php echo plugins_url() . '/incluyeme-export/importExcel.php'; ?>',
+					data: formData,
+					contentType: false,
+					processData: false,
+					success: function(data) {
+						Swal.fire({
+							icon: 'success',
+							title: 'Excel cargado',
+							html: 'Los datos se han cargado correctamente',
+						})
+						document.getElementById('fileInput').value = "";
+					}
+				});
+			};
+			reader.readAsText(file);
+		}
+
+		document.querySelector('#fileInput').addEventListener('change', readFile, false);
+
+		function parseCsv(data) {
+			let lines = data.replace(/\\r/g, "").split("\\n");
+			return lines.map(line => {
+				let values = line.split(",");
+				return values
+			})
 		}
 	</script>
 <?php
