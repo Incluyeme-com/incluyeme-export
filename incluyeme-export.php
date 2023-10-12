@@ -4,7 +4,7 @@
 Plugin Name: Incluyeme Export
 Plugin URI: https://github.com/Cro22
 Description: Panel de control de candidatos
-Version: 1.1.1
+Version: 1.1.2
 Author: Jesus Nuñez
 Author URI: https://github.com/Cro22
 License: A "Slug" license name e.g. GPL2
@@ -19,6 +19,7 @@ add_action( 'wp_ajax_get_candidates', 'get_candidates' );
 add_action( 'wp_ajax_delete_candidates_tags', 'update_candidates_tags' );
 add_action( 'wp_ajax_add_candidates_tags', 'add_candidates_tags' );
 add_action( 'wp_ajax_new_candidates_tags', 'add_new_candidates' );
+add_action( 'wp_ajax_add_new_candidates_users', 'add_new_candidates_users' );
 function incluPluginRequirementsExport()
 {
     if (is_admin() && current_user_can('activate_plugins') && !is_plugin_active('wpjobboard/index.php')) {

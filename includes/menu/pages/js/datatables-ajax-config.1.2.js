@@ -151,7 +151,6 @@ jQuery(document).ready(function () {
                     data.body.forEach(function (row) {
                         let rowData = {};
                         for (let i = 0; i < data.header.length; i++) {
-                            console.log({ad: columns[i]})
                             rowData[columns[i]] = row[i];
                         }
                         transformedData.push(rowData);
