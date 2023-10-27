@@ -198,11 +198,12 @@ function inclu_export_admin_page()
 				'Gender': 'Gender',
 				'Discapacidad': 'Discapacidad',
 			};
+			let regex = /,(?=(?:[^"]"[^"]")[^"]$)/g;
 			const lines = data.trim().split('\r\n');
 			const columnNames = lines[0].split(',');
 			const objectsArray = [];
 			for (let i = 1; i < lines.length; i++) {
-				const line = lines[i].split(',');
+				const line = lines[i].split(regex);
 				const obj = {};
 				for (let j = 0; j < columnNames.length; j++) {
 					obj[COLUMNS_NAMES[columnNames[j]]] = line[j];
