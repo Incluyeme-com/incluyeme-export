@@ -112,12 +112,16 @@ abstract class WP_Incluyeme_Countries_Abs
 
 	public static function updateDiscapacidades($userID, $discaps, $moreDis)
 	{
+		$arrayDiscaps = explode(",", $discaps);
+		foreach ($arrayDiscaps as $key => $value) {
+			$arrayDiscaps[$key] = trim($value, ' "');
+		}
 		$result2 = self::$wp->get_results("SELECT * from " . self::$dataPrefix . "wpjb_meta where 	meta_type = 3 and name = '" . self::$discap . "'");
 		if (count($result2) > 0) {
 			self::$wp->get_results('DELETE from ' . self::$dataPrefix . 'wpjb_meta_value WHERE object_id = ' . $userID . '  AND meta_id = ' . $result2[0]->id);
 		}
-		for ($i = 0; $i < count($discaps); $i++) {
-			if ($discaps[$i] === 'Ninguna') {
+		for ($i = 0; $i < count($arrayDiscaps); $i++) {
+			if ($arrayDiscaps[$i] === 'Ninguna') {
 
 				if (count($result2) > 0) {
 					self::$wp->insert(self::$dataPrefix . "wpjb_meta_value", [
@@ -129,9 +133,9 @@ abstract class WP_Incluyeme_Countries_Abs
 
 				return true;
 			}
-			$result = self::$wp->get_results('SELECT * from ' . self::$usersDiscapTable . ' where resume_id = ' . $userID . '  AND discap_id = ' . $discaps[$i]);
+
 			$disca  = null;
-			switch ($discaps[$i]) {
+			switch ($arrayDiscaps[$i]) {
 				case 'Motriz':
 					$disca = 1;
 					break;
@@ -158,9 +162,11 @@ abstract class WP_Incluyeme_Countries_Abs
 					break;
 			}
 
+			$result = self::$wp->get_results('SELECT * from ' . self::$usersDiscapTable . ' where resume_id = ' . $userID . '  AND discap_id = ' . $disca);
+
 			if (count($result2) > 0) {
 				self::$wp->insert(self::$dataPrefix . "wpjb_meta_value", [
-					'value'     => $discaps[$i],
+					'value'     => $arrayDiscaps[$i],
 					'object_id' => $userID,
 					'meta_id'   => $result2[0]->id
 				]);
@@ -174,39 +180,41 @@ abstract class WP_Incluyeme_Countries_Abs
 					]);
 				}
 			}
+
+			if ($disca != null) {
+				self::$wp->get_results("DELETE from " . self::$usersDiscapTable . " WHERE resume_id = " . $userID . `  AND discap_id ` . $disca . "");
+			}
 		}
-		self::$wp->get_results('UPDATE ' . self::$incluyemeUsersInformation . ' SET  	moreDis  = "' . $moreDis . '" WHERE resume_id = ' . $userID);
-		if ($disca != null) {
-			self::$wp->get_results('DELETE from ' . self::$usersDiscapTable . ' WHERE resume_id = ' . $userID . '  AND discap_id NOT IN (' . $disca . ')');
 
+		self::$wp->get_results('UPDATE ' . self::$incluyemeUsersInformation . ' SET  	moreDis  = ' . $moreDis . ' WHERE resume_id = ' . $userID);
 
-			if ($moreDis !== null) {
-				$result = self::$wp->get_results('SELECT * from ' . self::$dataPrefix . 'wpjb_meta where 	meta_type = 3 and name =  ' . "'" . self::$discapMore . "'");
-				if (count($result) > 0) {
-					$search = self::$wp->get_results('SELECT * from ' . self::$dataPrefix . 'wpjb_meta_value where meta_id  = ' . $result[0]->id . ' and object_id = ' . $userID);
+		if ($moreDis !== null) {
+			$result = self::$wp->get_results('SELECT * from ' . self::$dataPrefix . 'wpjb_meta where 	meta_type = 3 and name =  ' . "'" . self::$discapMore . "'");
+			if (count($result) > 0) {
+				$search = self::$wp->get_results('SELECT * from ' . self::$dataPrefix . 'wpjb_meta_value where meta_id  = ' . $result[0]->id . ' and object_id = ' . $userID);
 
-					if (count($search) > 0) {
-						self::$wp->update(self::$dataPrefix . 'wpjb_meta_value', [
-							'value'     => $moreDis,
-							'meta_id'   =>
-							$result[0]->id,
-							'object_id' => $userID
-						], [
-							'meta_id'   =>
-							$result[0]->id,
-							'object_id' => $userID
-						]);
-					} else if (count($result) > 0) {
-						self::$wp->insert(self::$dataPrefix . 'wpjb_meta_value', [
-							'value'     => $moreDis,
-							'meta_id'   =>
-							$result[0]->id,
-							'object_id' => $userID
-						]);
-					}
+				if (count($search) > 0) {
+					self::$wp->update(self::$dataPrefix . 'wpjb_meta_value', [
+						'value'     => $moreDis,
+						'meta_id'   =>
+						$result[0]->id,
+						'object_id' => $userID
+					], [
+						'meta_id'   =>
+						$result[0]->id,
+						'object_id' => $userID
+					]);
+				} else if (count($result) > 0) {
+					self::$wp->insert(self::$dataPrefix . 'wpjb_meta_value', [
+						'value'     => $moreDis,
+						'meta_id'   =>
+						$result[0]->id,
+						'object_id' => $userID
+					]);
 				}
 			}
 		}
+
 		return true;
 	}
 
@@ -338,18 +346,21 @@ abstract class WP_Incluyeme_Countries_Abs
 			"Gastronomía" => 16,
 			"Otros" => 	17
 		);
-		if (array_key_exists($preferJobs, $preferJobs_id)) {
-			$preferJobs = $preferJobs_id[$preferJobs];
+
+		$convertArrayPreferJob = explode(",", $preferJobs);
+		$preferJobsConvert = trim($convertArrayPreferJob[0], ' "');
+		if (array_key_exists($preferJobsConvert, $preferJobs_id)) {
+			$preferJobsConvert = $preferJobs_id[$preferJobsConvert];
 		} else {
 			return;
 		}
-		$myrows     = self::$wp->get_results("SELECT * FROM " . $table_name . " where id=" . $preferJobs . "");
+		$myrows     = self::$wp->get_results("SELECT * FROM " . $table_name . " where id=" . $preferJobsConvert . "");
 		foreach ($myrows as $details) {
 			add_user_meta($userID, 'area_interes', $details->jobs_prefers);
 			update_user_meta($userID, 'area', $details->jobs_prefers);
 		}
 		self::$wp->update(self::$incluyemeUsersInformation, [
-			'preferjob_id' => $preferJobs,
+			'preferjob_id' => $preferJobsConvert,
 
 		], ['resume_id' => $userID]);
 	}

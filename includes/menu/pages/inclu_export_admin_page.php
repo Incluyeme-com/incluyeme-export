@@ -198,7 +198,7 @@ function inclu_export_admin_page()
 				'Gender': 'Gender',
 				'Discapacidad': 'Discapacidad',
 			};
-			let regex = /,(?=(?:[^"]"[^"]")[^"]$)/g;
+			var regex = /,(?=(?:[^"]*"[^"]*")*[^"]*$)/g;
 			const lines = data.trim().split('\r\n');
 			const columnNames = lines[0].split(',');
 			const objectsArray = [];
