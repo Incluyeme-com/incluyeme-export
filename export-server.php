@@ -10,17 +10,98 @@ use common\WP_Incluyeme_Login_Countries;
 function get_candidates()
 {
 	if (isset($_POST['action']) && $_POST['action'] === 'get_candidates') {
+		$limit = isset($_POST['length']) ? intval($_POST['length']) : 10;
+		$offset = isset($_POST['start']) ? intval($_POST['start']) : 0;
+		$search = isset($_POST['search']['value']) ? $_POST['search']['value'] : '';
+		$orderColumnIndex = isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0;
+		$orderDirection = (isset($_POST['order'][0]['dir']) && $_POST['order'][0]['dir'] === 'desc') ? 'DESC' : 'ASC';
 
-		$queries     = new Queries();
-		$information = $queries->getFormatInformation();
+		$columns = [
+			'created_at',
+			'first_name',
+			'last_name',
+			'education'
+		];
+
+		$orderColumn = $columns[$orderColumnIndex] ?? 'created_at';
+
+		$queries = new Queries();
+		$information = $queries->getUsersInformation($limit, $offset, $search, $orderColumn, $orderDirection);
 
 		$response = [
-			"draw"         => 0,
-			"recordsTotal" => $queries->numbersOfItems,
-			"data"         => $information
+			"draw" => intval($_POST['draw']),
+			"recordsTotal" => $queries->getTotalRecords(),
+			"recordsFiltered" => $queries->getFilteredRecordsCount($search),
+			"data" => $information
 		];
 
 		echo json_encode($response);
+		wp_die();
+	}
+}
+
+function get_filter_options()
+{
+	if (isset($_POST['action']) && $_POST['action'] === 'get_filter_options') {
+		$queries = new Queries();
+		$options = $queries->getDistinctOptions();
+		$orderColumnIndex = isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0;
+		$columns = [
+			'created_at',
+			'first_name',
+			'last_name',
+			'education'
+		];
+
+		$orderColumn = $columns[$orderColumnIndex] ?? 'created_at';
+
+		$response = [
+			"provincia" => array_unique(array_column($options, 'provincia')),
+			"zona" => array_unique(array_column($options, 'zona')),
+			"genero" => array_unique(array_column($options, 'genero')),
+			"discapacidad" => array_unique(array_column($options, 'discapacidad')),
+			"Nivel Maximo de Estudio" => array_unique(array_column($options, 'nivel_maximo_estudio')),
+			"¿Tiene trabajo?" => array_unique(array_column($options, 'tiene_trabajo')),
+			"¿Busqueda laboral?" => array_unique(array_column($options, 'busqueda_laboral')),
+			"Nivel de Ingles" => array_unique(array_column($options, 'nivel_ingles')),
+			"Area de Interes" => array_unique(array_column($options, 'area_interes')),
+			"Etiquetas" => array_unique(array_column($options, 'tags'))
+		];
+
+		$responseData = [
+			"recordsTotal" => $queries->getTotalRecords(),
+			"recordsFiltered" => $queries->getFilteredRecordsCount('', $orderColumn),
+			"data" => $response
+		];
+
+		echo json_encode($responseData);
+		wp_die();
+	}
+}
+
+function get_TotalRecords()
+{
+	$queries = new Queries();
+	return $queries->getTotalRecords();
+}
+
+function get_TotalFilteredRecords($search = '', $filters = [])
+{
+	$queries = new Queries();
+	return $queries->getFilteredRecordsCount($search, $filters);
+}
+
+function add_candidates_tags()
+{
+	if (isset($_POST['action']) && $_POST['action'] === 'add_candidates_tags') {
+
+		$queries = new Queries();
+		$users   = $_POST['users'];
+		$tags    = $_POST['tags'];
+		$queries->updateUserTags($users, $tags);
+
+
+		echo json_encode([]);
 
 		wp_die();
 	}
@@ -34,22 +115,6 @@ function update_candidates_tags()
 		$queries = new Queries();
 		$users   = $_POST['users'];
 		$queries->deleteUserAllTags($users);
-
-
-		echo json_encode([]);
-
-		wp_die();
-	}
-}
-
-function add_candidates_tags()
-{
-	if (isset($_POST['action']) && $_POST['action'] === 'add_candidates_tags') {
-
-		$queries = new Queries();
-		$users   = $_POST['users'];
-		$tags    = $_POST['tags'];
-		$queries->updateUserTags($users, $tags);
 
 
 		echo json_encode([]);
@@ -140,6 +205,3 @@ function add_new_candidates_users()
 		}
 	}
 }
-
-/*
-Área de interés */

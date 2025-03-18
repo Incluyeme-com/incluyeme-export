@@ -181,12 +181,12 @@ abstract class WP_Incluyeme_Countries_Abs
 				}
 			}
 
-			if ($disca != null) {
-				self::$wp->get_results("DELETE from " . self::$usersDiscapTable . " WHERE resume_id = " . $userID . `  AND discap_id ` . $disca . "");
-			}
+			/* if ($disca != null) {
+				self::$wp->get_results("DELETE from " . self::$usersDiscapTable . " WHERE resume_id = " . $userID . " AND discap_id = " . $disca);
+			} */
 		}
 
-		self::$wp->get_results('UPDATE ' . self::$incluyemeUsersInformation . ' SET  	moreDis  = ' . $moreDis . ' WHERE resume_id = ' . $userID);
+		self::$wp->get_results('UPDATE ' . self::$incluyemeUsersInformation . ' SET moreDis = "' . $moreDis . '" WHERE resume_id = ' . $userID);
 
 		if ($moreDis !== null) {
 			$result = self::$wp->get_results('SELECT * from ' . self::$dataPrefix . 'wpjb_meta where 	meta_type = 3 and name =  ' . "'" . self::$discapMore . "'");
