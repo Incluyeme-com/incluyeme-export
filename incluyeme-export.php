@@ -4,7 +4,7 @@
 Plugin Name: Incluyeme Export
 Plugin URI: https://github.com/Cro22
 Description: Panel de control de candidatos
-Version: 1.1.8
+Version: 1.1.9
 Author: Jesus Nuñez
 Author URI: https://github.com/Cro22
 License: A "Slug" license name e.g. GPL2
@@ -33,7 +33,7 @@ function incluPluginRequirementsExport()
 }
 function enqueue_plugin_scripts()
 {
-    wp_enqueue_script('datatables-config', plugin_dir_url(__FILE__) . '/includes/menu/pages/js/datatables-ajax-config.js', array('jquery'), '1.0', true);
+    wp_enqueue_script('datatables-config', plugin_dir_url(__FILE__) . '/includes/menu/pages/js/datatables-ajax-config.1.2.js', array('jquery'), '1.0', true);
 
 
     wp_localize_script('datatables-config', 'datatable_ajax_url', array('ajax_url' => admin_url('admin-ajax.php')));
