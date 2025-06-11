@@ -83,8 +83,6 @@ class Queries
         IUI.genre AS gender,
         COALESCE(TAGS.meta_value, 'No indica') AS tags,
         COALESCE(IUDS.discap_names, 'No indica') AS disability,
-        COALESCE(EDUC.detail_titles, 'No indica') AS education,
-        COALESCE(EXP.detail_titles, 'No indica') AS experience,
         COALESCE(user_meta.birth_country, 'No indica') AS birth_country,
         COALESCE(user_meta.max_education_level, 'No indica') AS max_education_level,
         COALESCE(user_meta.has_job, 'No indica') AS has_job,
@@ -132,18 +130,6 @@ class Queries
         WHERE meta_key = 'tagsIncluyeme'
         GROUP BY user_id
     ) AS TAGS ON RS.user_id = TAGS.user_id
-    LEFT JOIN (
-        SELECT resume_id, GROUP_CONCAT(detail_title SEPARATOR ', ') AS detail_titles
-        FROM wp_wpjb_resume_detail
-        WHERE type = 2
-        GROUP BY resume_id
-    ) AS EDUC ON RS.id = EDUC.resume_id
-    LEFT JOIN (
-        SELECT resume_id, GROUP_CONCAT(detail_title SEPARATOR ', ') AS detail_titles
-        FROM wp_wpjb_resume_detail
-        WHERE type = 1
-        GROUP BY resume_id
-    ) AS EXP ON RS.id = EXP.resume_id
     WHERE RS.is_active = 1
     $searchCondition
     ORDER BY $orderColumn $orderDirection
@@ -155,6 +141,18 @@ class Queries
         foreach ($information as &$user) {
             $cv = $this->getCV($user->resume_id);
             $user->cv = $cv[0];
+
+            $user->experience = $this->executeSQL("
+            SELECT * 
+            FROM wp_wpjb_resume_detail 
+            WHERE type = 1 AND resume_id = {$user->resume_id}
+        ");
+
+            $user->education = $this->executeSQL("
+            SELECT * 
+            FROM wp_wpjb_resume_detail 
+            WHERE type = 2 AND resume_id = {$user->resume_id}
+        ");
         }
 
         return $information;
@@ -436,9 +434,9 @@ class Queries
                 'area_of_interest'       => $userInfo["area_interes"] ?? 'No indica',
                 'tags'                   => $info->tags ? $this->formatTags($info->tags) : 'No indica',
                 'created_at'             => $info->created_at ?? 'No indica',
-                'education'                 => $info->education ?? 'No indica',
+                'education'              => $info->education ?? 'No indica',
                 'experience'             => $info->experience ?? 'No indica',
-                'cv'                     => $info->cv ?? 'No indica',
+                'cv'                     => !empty($variable) ?? 'No indica',
             ];
         }
 
