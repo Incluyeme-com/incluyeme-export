@@ -167,6 +167,9 @@ jQuery(document).ready(function () {
           {
             extend: "csv",
             exportOptions: {
+              modifier: {
+                page: "all",
+              },
               columns: [":visible:not(:eq(20))"],
               format: {
                 header: function (data, columnIdx) {
@@ -238,6 +241,11 @@ jQuery(document).ready(function () {
           },
           {
             text: "JSON",
+            exportOptions: {
+              modifier: {
+                page: "all",
+              },
+            },
             action: function (e, dt, button, config) {
               let data = dt.buttons.exportData({
                 decodeEntities: true,
@@ -470,8 +478,58 @@ jQuery(document).ready(function () {
       { data: "area_of_interest" },
       { data: "tags" },
       { data: "reasonable_adjustments" },
-      { data: "education" },
-      { data: "experience" },
+      {
+        data: "education",
+        render: function (data, type, row) {
+          if (Array.isArray(data) && data.length > 0) {
+            let fullText = data
+              .map(
+                (edu) =>
+                  `Título: ${
+                    edu.detail_title ?? "No indica"
+                  }, Institución Educativa: ${
+                    edu.grantor ?? "No indica"
+                  }, Desde: ${edu.started_at ?? "No indica"}, Hasta: ${
+                    edu.completed_at ?? "No indica"
+                  }`
+              )
+              .join(" | ");
+
+            let shortText =
+              fullText.length > 30
+                ? fullText.substring(0, 30) + "..."
+                : fullText;
+
+            return `<span title="${fullText}">${shortText}</span>`;
+          }
+          return "No indica";
+        },
+      },
+      {
+        data: "experience",
+        render: function (data, type, row) {
+          if (Array.isArray(data) && data.length > 0) {
+            let fullText = data
+              .map(
+                (exp) =>
+                  `Título: ${exp.detail_title ?? "No indica"}, Empresa: ${
+                    exp.grantor ?? "No indica"
+                  }, Desde: ${exp.started_at ?? "No indica"}, Hasta: ${
+                    exp.completed_at ?? "No indica"
+                  }`
+              )
+              .join(" | ");
+
+            let shortText =
+              fullText.length > 30
+                ? fullText.substring(0, 30) + "..."
+                : fullText;
+
+            return `<span title="${fullText}">${shortText}</span>`;
+          }
+          return "No indica";
+        },
+      },
       { data: "cv" },
       { data: "user_id", visible: false },
       { data: null, defaultContent: "" },
