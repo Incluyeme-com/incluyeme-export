@@ -241,42 +241,61 @@ jQuery(document).ready(function () {
           },
           {
             text: "JSON",
-            exportOptions: {
-              modifier: {
-                page: "all",
-              },
-            },
             action: function (e, dt, button, config) {
-              let data = dt.buttons.exportData({
-                decodeEntities: true,
-                format: {
-                  body: function (data, row, column, node) {
-                    if (
-                      node.firstChild &&
-                      typeof node.firstChild.getAttribute === "function"
-                    ) {
-                      return node.firstChild.getAttribute("title") || data;
-                    }
-                    return data;
-                  },
+              exportAll = true;
+              $.ajax({
+                url: datatable_ajax_url.ajax_url,
+                type: "POST",
+                data: {
+                  action: "get_candidates",
+                  exportAll: true,
+                },
+                success: function (response) {
+                  exportAll = false;
+                  const result = JSON.parse(response).data;
+                  const transformed = result.map((user) => ({
+                    Creacion: user.created_at,
+                    Nombre: user.first_name,
+                    Apellido: user.last_name,
+                    Email: user.user_email,
+                    Telefono: user.phone,
+                    Provincia: user.province,
+                    Zona: user.zone,
+                    Genero: user.gender,
+                    "Pais de nacimiento": user.birth_country,
+                    Discapacidad: user.disability,
+                    "Nivel Maximo de Estudio": user.max_education_level,
+                    "¿Tiene trabajo?": user.has_job,
+                    "¿Busqueda laboral?": user.looking_for_job,
+                    "Nivel de Ingles": user.name_level,
+                    "Area de Interes": user.area_of_interest,
+                    Etiquetas: user.tags,
+                    "Ajustes Razonables": user.reasonable_adjustments,
+                    Estudios: (user.education || [])
+                      .map(
+                        (edu) =>
+                          `Título: ${edu.detail_title}, Institución Educativa: ${edu.grantor}, Nivel: ${edu.detail_description}, Desde: ${edu.started_at}, Hasta: ${edu.completed_at}`
+                      )
+                      .join(" | "),
+                    Experiencia: (user.experience || [])
+                      .map(
+                        (exp) =>
+                          `Título: ${exp.detail_title}, Empresa: ${exp.grantor}, Desde: ${exp.started_at}, Hasta: ${exp.completed_at}`
+                      )
+                      .join(" | "),
+                    "CV adjunto": user.cv || false,
+                  }));
+                  console.log(transformed.length);
+                  jQuery.fn.dataTable.fileSave(
+                    new Blob([JSON.stringify(transformed)]),
+                    "Export.json"
+                  );
+                },
+                error: function () {
+                  exportAll = false;
+                  alert("No se pudo exportar la información.");
                 },
               });
-              let transformedData = [];
-
-              data.body.forEach(function (row) {
-                let rowData = {};
-                for (let i = 0; i < data.headerStructure[0].length; i++) {
-                  if (columns[i] !== undefined && i !== 21) {
-                    rowData[columns[i]] = row[i];
-                  }
-                }
-                transformedData.push(rowData);
-              });
-
-              jQuery.fn.dataTable.fileSave(
-                new Blob([JSON.stringify(transformedData)]),
-                "Export.json"
-              );
             },
           },
         ],
