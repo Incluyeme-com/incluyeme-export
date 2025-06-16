@@ -4,11 +4,7 @@
 Plugin Name: Incluyeme Export
 Plugin URI: https://github.com/Cro22
 Description: Panel de control de candidatos
-<<<<<<< develop
 Version: 1.2.1
-=======
-Version: 1.2.0
->>>>>>> main
 Author: Jesus Nuñez
 Author URI: https://github.com/Cro22
 License: A "Slug" license name e.g. GPL2
