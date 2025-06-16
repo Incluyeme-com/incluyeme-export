@@ -23,6 +23,9 @@ class Queries
     public function getUsersInformation($limit, $offset, $search = '', $orderColumn = 'created_at', $orderDirection = 'ASC')
     {
         $filters = [];
+        $exportAll = $_POST['exportAll'] ?? false;
+        $limitOffset = $exportAll ? '' : "LIMIT $limit OFFSET $offset";
+
         foreach ($_POST['columns'] as $index => $column) {
             if (!empty($column['search']['value'])) {
                 $value = '%' . $column['search']['value'] . '%';
@@ -133,7 +136,7 @@ class Queries
     WHERE RS.is_active = 1
     $searchCondition
     ORDER BY $orderColumn $orderDirection
-    LIMIT $limit OFFSET $offset;
+    $limitOffset;
     ";
 
         $information = $this->executeSQL($this->replaceString($users));
